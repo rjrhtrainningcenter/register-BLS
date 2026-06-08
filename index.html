@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ลงทะเบียนอบรม BLS - RJRH TRAINING CENTER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { 
+            --primary: #071f54; 
+            --accent: #1976d2; 
+        }
+        body { 
+            font-family: 'Sarabun', sans-serif; 
+            background-color: #f0f4f8; 
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .reg-card { 
+            width: 100%; 
+            max-width: 600px; 
+            padding: 40px; 
+            border-radius: 24px; 
+            background: #ffffff; 
+            box-shadow: 0 20px 60px rgba(7,31,84,0.1); 
+            border: 1px solid rgba(7, 31, 84, 0.05);
+        }
+        .form-label {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        .form-control-lg, .form-select-lg {
+            border-radius: 12px;
+            font-size: 1rem;
+            background-color: #f8fafc;
+        }
+        .form-control-lg:focus, .form-select-lg:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.1);
+        }
+        .btn-reg {
+            background-color: var(--primary);
+            color: #ffffff;
+            font-weight: 700;
+            padding: 14px;
+            border-radius: 12px;
+            transition: all 0.25s ease;
+        }
+        .btn-reg:hover {
+            background-color: #031233;
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="reg-card">
+    <div class="text-center mb-4">
+        <img src="https://cpiwdnbcuotmhtbhuzce.supabase.co/storage/v1/object/public/picture/LOGO_RJRH.png" alt="RJRH Logo" style="height: 100px; object-fit: contain;">
+        <h4 class="fw-bold text-primary mt-3">ลงทะเบียนเข้าร่วมฝึกอบรม</h4>
+        <p class="text-muted small">หลักสูตรการช่วยชีวิตขั้นพื้นฐาน Basic Life Support (CPR/AED)</p>
+    </div>
+
+    <form id="regForm" onsubmit="handleRegistration(event)">
+        <div class="mb-3">
+            <label class="form-label">เลือกรอบโครงการที่ต้องการเรียน</label>
+            <select id="sessionSelect" class="form-select form-select-lg" required onchange="checkQuotaVisibility()">
+                <option value="">-- กำลังโหลดรายการรอบอบรม... --</option>
+            </select>
+            <div id="quotaFeedback" class="form-text fw-bold text-success mt-1" style="display: none;"></div>
+        </div>
+
+        <div class="row">
+            <div class="col-sm-4 col-12 mb-3">
+                <label class="form-label">คำนำหน้าชื่อ</label>
+                <select id="prefix" class="form-select form-select-lg" required>
+                    <option value="นาย">นาย</option>
+                    <option value="นางสาว">นางสาว</option>
+                    <option value="นาง">นาง</option>
+                    <option value="นพ.">นพ.</option>
+                    <option value="พญ.">พญ.</option>
+                </select>
+            </div>
+            <div class="col-sm-8 col-12 mb-3">
+                <label class="form-label">ชื่อ - นามสกุล (ภาษาไทย)</label>
+                <input type="text" id="fullNameTH" class="form-control form-control-lg" placeholder="สมชาย ใจดี" required>
+                <div class="form-text text-muted small">* โปรดตรวจสอบตัวสะกดเพื่อใช้พิมพ์บนวุฒิบัตร</div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">เบอร์โทรศัพท์มือถือ</label>
+            <input type="tel" id="phone" class="form-control form-control-lg" placeholder="0812345678" pattern="^[0-9]{9,10}$" required>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label">อีเมล (E-mail)</label>
+            <input type="email" id="email" class="form-control form-control-lg" placeholder="example@gmail.com" required>
+            <div class="form-text text-muted small">* ระบบจะจัดส่ง QR Code รายงานตัว และวุฒิบัตร PDF ผ่านอีเมลนี้</div>
+        </div>
+
+        <div class="mb-4 bg-light p-3 rounded-3 border">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="photoConsent" checked>
+                <label class="form-check-input-label small text-dark fw-medium" for="photoConsent">
+                    ยินยอมให้เจ้าหน้าที่บันทึกภาพถ่าย/วิดีโอระหว่างกิจกรรมอบรมเพื่อใช้ในการประชาสัมพันธ์หลักสูตร (PDPA)
+                </label>
+            </div>
+        </div>
+
+        <button type="submit" id="btnSubmit" class="btn btn-reg w-100 btn-lg shadow-sm">
+            <i class="fas fa-paper-plane me-2"></i> ส่งข้อมูลลงทะเบียนเรียน
+        </button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+
+<script>
+    let activeSessions = [];
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        await loadActiveSessions();
+    });
+
+    // 🚀 ดึงข้อมูลรอบอบรม BLS ที่ยังเปิดรับสมัคร (Active) จาก Supabase มาทำตัวเลือก Dropdown
+    async function loadActiveSessions() {
+        const selectEl = document.getElementById('sessionSelect');
+        try {
+            const { data: sessions, error } = await supabaseClient
+                .from('sessions')
+                .select('*')
+                .eq('status', 'Active')
+                .eq('course_key', 'BLS')
+                .order('id', { ascending: true });
+
+            if (error) throw error;
+
+            if (!sessions || sessions.length === 0) {
+                selectEl.innerHTML = '<option value="">-- ขออภัย ขณะนี้ไม่มีรอบอบรมที่เปิดรับสมัคร --</option>';
+                document.getElementById('btnSubmit').disabled = true;
+                return;
+            }
+
+            activeSessions = sessions;
+            selectEl.innerHTML = '<option value="">-- กรุณาเลือกรอบอบรมเรียน BLS --</option>';
+            sessions.forEach(s => {
+                // ดักเช็คที่นั่งคงเหลือ
+                if (s.available_seats > 0) {
+                    selectEl.innerHTML += `<option value="${s.id}">[รอบเรียน] ${s.name} (${s.date})</option>`;
+                } else {
+                    selectEl.innerHTML += `<option value="${s.id}" disabled>[เต็มแล้ว] ${s.name} (${s.date})</option>`;
+                }
+            });
+        } catch (e) {
+            console.error("Load Sessions Error:", e);
+            selectEl.innerHTML = '<option value="">-- โหลดข้อมูลรอบอบรมล้มเหลว --</option>';
+        }
+    }
+
+    // 📊 ฟังก์ชันตรวจสอบและแจ้งข้อมูลที่นั่งคงเหลือจริงบน Dropdown
+    function checkQuotaVisibility() {
+        const sessionId = document.getElementById('sessionSelect').value;
+        const feedback = document.getElementById('quotaFeedback');
+        
+        if (!sessionId) {
+            feedback.style.display = 'none';
+            return;
+        }
+
+        const selected = activeSessions.find(item => String(item.id) === String(sessionId));
+        if (selected) {
+            feedback.style.display = 'block';
+            feedback.innerText = `ว่างอีก: ${selected.available_seats} จาก ${selected.max_seats} ที่นั่ง`;
+        }
+    }
+
+    // 📝 ฟังก์ชันจัดการสับสวิตช์ยิงข้อมูลข้ามค่ายไปหา GAS ตัวกลางหลัก
+    async function handleRegistration(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btnSubmit');
+        const sessionId = document.getElementById('sessionSelect').value;
+        const selectedSession = activeSessions.find(item => String(item.id) === String(sessionId));
+
+        if (!selectedSession) return;
+
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังประมวลผลข้อมูลการสมัคร...';
+
+        // เจนรหัสลงทะเบียนสุ่มเลข 8 หลักให้ตรงตามเงื่อนไข Database
+        const uniqueId = Math.floor(10000000 + Math.random() * 90000000);
+
+        // ดึงโครงข้อมูลดิบมาเตรียมจัดส่ง
+        const payload = {
+            action: "registerOnline",
+            id: uniqueId,
+            prefix: document.getElementById('prefix').value,
+            fullNameTH: document.getElementById('fullNameTH').value.trim(),
+            phone: document.getElementById('phone').value.trim(),
+            email: document.getElementById('email').value.trim(),
+            sessionName: selectedSession.name,
+            trainingDate: selectedSession.training_date, // ส่งข้อมูล DATE สากล
+            trainingTime: selectedSession.training_time, // ส่งข้อมูลช่วงเวลา
+            courseKey: "BLS",
+            photoConsent: document.getElementById('photoConsent').checked
+        };
+
+        try {
+            // ยิงผ่านรูปแบบ URL-encoded ชน doPost ของฝั่ง GAS หลัก เพื่อก้าวข้ามกำแพง CORS ของกูเกิ้ล
+            const response = await fetch(MAIN_REG_API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: "postData=" + encodeURIComponent(JSON.stringify(payload))
+            });
+
+            // อัปเดตยอดที่นั่งโควตาคงเหลือลดลง 1 ที่นั่งลงตาราง sessions บน Supabase แบบ Realtime
+            const currentAvailable = selectedSession.available_seats - 1;
+            await supabaseClient
+                .from('sessions')
+                .update({ available_seats: currentAvailable })
+                .eq('id', selectedSession.id);
+
+            Swal.fire({
+                title: 'ลงทะเบียนสำเร็จ!',
+                html: `รหัสลงทะเบียนของคุณคือ: <b class="text-danger fs-4">${uniqueId}</b><br><br>ระบบทำการส่ง QR Code สำหรับรายงานตัวเข้าสู่กล่องข้อความอีเมลเรียบร้อยแล้ว โปรดตรวจสอบกล่องจดหมายของคุณ (หรือใน Junk mail)`,
+                icon: 'success',
+                confirmButtonColor: '#071f54',
+                confirmButtonText: 'ตกลง'
+            }).then(() => {
+                document.getElementById('regForm').reset();
+                loadActiveSessions(); // โหลดอัปเดตโควตาใหม่
+            });
+
+        } catch (err) {
+            console.error(err);
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> ส่งข้อมูลลงทะเบียนเรียน';
+        }
+    }
+</script>
+</body>
+</html>
