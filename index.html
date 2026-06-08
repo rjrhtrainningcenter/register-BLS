@@ -101,8 +101,8 @@
 
         <div class="mb-4">
             <label class="form-label">อีเมล (E-mail)</label>
-            <input type="email" id="email" class="form-control form-control-lg" placeholder="example@gmail.com" required>
-            <div class="form-text text-muted small">* ระบบจะจัดส่ง QR Code รายงานตัว และวุฒิบัตร PDF ผ่านอีเมลนี้</div>
+            <input type="email" id="email" class="form-control form-control-lg" placeholder="example@gmail.com" pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$" title="โปรดระบุที่อยู่อีเมลที่เป็นบัญชีของ @gmail.com เท่านั้น" required>
+            <div class="form-text text-danger fw-bold small mt-1"><i class="fas fa-exclamation-circle me-1"></i> รองรับเฉพาะบัญชีอีเมล @gmail.com เท่านั้น</div>
         </div>
 
         <div class="mb-4 bg-light p-3 rounded-3 border">
@@ -132,7 +132,6 @@
         await loadActiveSessions();
     });
 
-    // 🔄 ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ (YYYY-MM-DD) ออกมาเป็นข้อความภาษาไทยเพื่อแสดงผลบน Dropdown สำหรับคนเรียน
     function formatThaiDateDisplay(dateStr, timeStr) {
         if (!dateStr) return "";
         try {
@@ -150,7 +149,6 @@
         }
     }
 
-    // 🚀 ดึงข้อมูลรอบอบรม BLS ที่ยังเปิดรับสมัคร (Active) จาก Supabase มาทำตัวเลือก Dropdown
     async function loadActiveSessions() {
         const selectEl = document.getElementById('sessionSelect');
         try {
@@ -172,10 +170,8 @@
             activeSessions = sessions;
             selectEl.innerHTML = '<option value="">-- กรุณาเลือกรอบอบรมเรียน BLS --</option>';
             sessions.forEach(s => {
-                // 🌟 จุดแก้บั๊กวิกฤต: ประกอบร่างข้อความวันที่ภาษาไทยสด ๆ จาก training_date และ training_time
                 const localDisplayDate = formatThaiDateDisplay(s.training_date, s.training_time);
 
-                // ดักเช็คที่นั่งคงเหลือ
                 if (s.available_seats > 0) {
                     selectEl.innerHTML += `<option value="${s.id}">[รอบเรียน] ${s.name} - วันที่ ${localDisplayDate}</option>`;
                 } else {
@@ -188,7 +184,6 @@
         }
     }
 
-    // 📊 ฟังก์ชันตรวจสอบและแจ้งข้อมูลที่นั่งคงเหลือจริงบน Dropdown
     function checkQuotaVisibility() {
         const sessionId = document.getElementById('sessionSelect').value;
         const feedback = document.getElementById('quotaFeedback');
@@ -205,45 +200,47 @@
         }
     }
 
-    // 📝 ฟังก์ชันจัดการสับสวิตช์ยิงข้อมูลข้ามค่ายไปหา GAS ตัวกลางหลัก
     async function handleRegistration(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSubmit');
+        const emailInput = document.getElementById('email').value.trim();
         const sessionId = document.getElementById('sessionSelect').value;
         const selectedSession = activeSessions.find(item => String(item.id) === String(sessionId));
 
         if (!selectedSession) return;
 
+        // 🌟 ดักสตรีมรอบสองฝั่ง JavaScript บังคับดีดออกทันทีหากคนแอบแฮกแก้อินพุตไม่ใช่จีเมล
+        if (!emailInput.toLowerCase().endsWith('@gmail.com')) {
+            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ใช้งานและส่งมอบสิทธิ์ผ่านอีเมลบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
+            return;
+        }
+
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>กำลังประมวลผลข้อมูลการสมัคร...';
 
-        // เจนรหัสลงทะเบียนสุ่มเลข 8 หลักให้ตรงตามเงื่อนไข Database
         const uniqueId = Math.floor(10000000 + Math.random() * 90000000);
 
-        // ดึงโครงข้อมูลดิบมาเตรียมจัดส่ง
         const payload = {
             action: "registerOnline",
             id: uniqueId,
             prefix: document.getElementById('prefix').value,
             fullNameTH: document.getElementById('fullNameTH').value.trim(),
             phone: document.getElementById('phone').value.trim(),
-            email: document.getElementById('email').value.trim(),
+            email: emailInput,
             sessionName: selectedSession.name,
-            trainingDate: selectedSession.training_date, // ส่งข้อมูล DATE สากล
-            trainingTime: selectedSession.training_time, // ส่งข้อมูลช่วงเวลา
+            trainingDate: selectedSession.training_date, 
+            trainingTime: selectedSession.training_time, 
             courseKey: "BLS",
             photoConsent: document.getElementById('photoConsent').checked
         };
 
         try {
-            // ยิงผ่านรูปแบบ URL-encoded ชน doPost ของฝั่ง GAS หลัก เพื่อก้าวข้ามกำแพง CORS ของกูเกิ้ล
             const response = await fetch(MAIN_REG_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: "postData=" + encodeURIComponent(JSON.stringify(payload))
             });
 
-            // อัปเดตยอดที่นั่งโควตาคงเหลือลดลง 1 ที่นั่งลงตาราง sessions บน Supabase แบบ Realtime
             const currentAvailable = selectedSession.available_seats - 1;
             await supabaseClient
                 .from('sessions')
@@ -258,12 +255,12 @@
                 confirmButtonText: 'ตกลง'
             }).then(() => {
                 document.getElementById('regForm').reset();
-                loadActiveSessions(); // โหลดอัปเดตโควตาใหม่
+                loadActiveSessions(); 
             });
 
         } catch (err) {
             console.error(err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนได้ กรุณาลองใหมีกระบวนการอีกครั้ง', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> ส่งข้อมูลลงทะเบียนเรียน';
