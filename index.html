@@ -132,6 +132,24 @@
         await loadActiveSessions();
     });
 
+    // 🔄 ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ (YYYY-MM-DD) ออกมาเป็นข้อความภาษาไทยเพื่อแสดงผลบน Dropdown สำหรับคนเรียน
+    function formatThaiDateDisplay(dateStr, timeStr) {
+        if (!dateStr) return "";
+        try {
+            const dateParts = dateStr.split("-");
+            if (dateParts.length !== 3) return dateStr;
+            
+            const day = parseInt(dateParts[2], 10);
+            const monthIndex = parseInt(dateParts[1], 10) - 1;
+            const yearBe = parseInt(dateParts[0], 10) + 543;
+            
+            const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+            return `${day} ${thaiMonths[monthIndex]} ${yearBe} (${timeStr || 'เต็มวัน'})`;
+        } catch (e) {
+            return dateStr;
+        }
+    }
+
     // 🚀 ดึงข้อมูลรอบอบรม BLS ที่ยังเปิดรับสมัคร (Active) จาก Supabase มาทำตัวเลือก Dropdown
     async function loadActiveSessions() {
         const selectEl = document.getElementById('sessionSelect');
@@ -141,7 +159,7 @@
                 .select('*')
                 .eq('status', 'Active')
                 .eq('course_key', 'BLS')
-                .order('id', { ascending: true });
+                .order('training_date', { ascending: true });
 
             if (error) throw error;
 
@@ -154,11 +172,14 @@
             activeSessions = sessions;
             selectEl.innerHTML = '<option value="">-- กรุณาเลือกรอบอบรมเรียน BLS --</option>';
             sessions.forEach(s => {
+                // 🌟 จุดแก้บั๊กวิกฤต: ประกอบร่างข้อความวันที่ภาษาไทยสด ๆ จาก training_date และ training_time
+                const localDisplayDate = formatThaiDateDisplay(s.training_date, s.training_time);
+
                 // ดักเช็คที่นั่งคงเหลือ
                 if (s.available_seats > 0) {
-                    selectEl.innerHTML += `<option value="${s.id}">[รอบเรียน] ${s.name} (${s.date})</option>`;
+                    selectEl.innerHTML += `<option value="${s.id}">[รอบเรียน] ${s.name} - วันที่ ${localDisplayDate}</option>`;
                 } else {
-                    selectEl.innerHTML += `<option value="${s.id}" disabled>[เต็มแล้ว] ${s.name} (${s.date})</option>`;
+                    selectEl.innerHTML += `<option value="${s.id}" disabled>[เต็มแล้ว] ${s.name} - วันที่ ${localDisplayDate}</option>`;
                 }
             });
         } catch (e) {
