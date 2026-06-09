@@ -94,6 +94,7 @@
     const SUPABASE_URL = "https://cpiwdnbcuotmhtbhuzce.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwaXdkbmJjdW90bWh0Ymh1emNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDY4NTMsImV4cCI6MjA5NjEyMjg1M30.7QU1FwPgIElugv4B6i23tYmmC60LG0wc8896EHTKXUc";
     
+    // 📡 ต่อท่อตรงหาลิงก์เว็บแอปหลักเวอร์ชันล่าสุดของนาย
     const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbw-U9InsFm7MlEWzlaeNIhfYlJuiqVF3uSPNJcrJgpNtZp54805YOiW9pJ-B6EDXQ0/exec";
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -126,7 +127,7 @@
             const monthIndex = parseInt(dateParts[1], 10) - 1;
             const yearBe = parseInt(dateParts[0], 10) + 543;
             const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
-            return `${day} ${thaiMonths[monthIndex]} ${yearBe} (${timeStr || 'เต็มวัน'})`;
+            return day + " " + thaiMonths[monthIndex] + " " + yearBe + " (" + (timeStr || 'เต็มวัน') + ")";
         } catch (e) { return dateStr; }
     }
 
@@ -145,9 +146,9 @@
             sessions.forEach(s => {
                 const localDisplayDate = formatThaiDateDisplay(s.training_date, s.training_time);
                 if (s.available_seats > 0) {
-                    selectEl.innerHTML += `<option value="${s.id}">[รอบเรียน] ${s.name} - วันที่ ${localDisplayDate}</option>`;
+                    selectEl.innerHTML += '<option value="' + s.id + '">[รอบเรียน] ' + s.name + ' - วันที่ ' + localDisplayDate + '</option>';
                 } else {
-                    selectEl.innerHTML += `<option value="${s.id}" disabled>[เต็มแล้ว] ${s.name} - วันที่ ${localDisplayDate}</option>`;
+                    selectEl.innerHTML += '<option value="' + s.id + '" disabled>[เต็มแล้ว] ' + s.name + ' - วันที่ ' + localDisplayDate + '</option>';
                 }
             });
         } catch (e) { console.error(e); selectEl.innerHTML = '<option value="">-- โหลดข้อมูลรอบอบรมล้มเหลว --</option>'; }
@@ -160,7 +161,8 @@
         const selected = activeSessions.find(item => String(item.id) === String(sessionId));
         if (selected) {
             feedback.style.display = 'block';
-            feedback.innerText = `ว่างอีก: ${selected.available_seats} จาก ${selected.max_seats} ที่นั่ง`;
+            // 🟢 🌟 ซ่อมแซมบั๊กวิกฤต: ครอบสายอักขระภาษากัน Syntax Error บล็อกการรันระบบเรียบร้อยครับ
+            feedback.innerText = "ว่างอีก: " + selected.available_seats + " จาก " + selected.max_seats + " ที่นั่ง";
         }
     }
 
@@ -172,9 +174,8 @@
         const selectedSession = activeSessions.find(item => String(item.id) === String(sessionId));
 
         if (!selectedSession) return;
-        
         if (!emailInput.toLowerCase().endsWith('@gmail.com')) {
-            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ลงทะเบียนและรับใบประกาศผ่านอีเมลบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
+            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ระบบเปิดให้ลงทะเบียนผ่านบัญชี @gmail.com เท่านั้นครับ', 'warning');
             return;
         }
 
@@ -188,11 +189,11 @@
             return;
         }
 
-        const fullInsertedName = `${finalPrefix}${document.getElementById('fullNameTH').value.trim()}`;
+        const fullInsertedName = finalPrefix + document.getElementById('fullNameTH').value.trim();
 
         const confirmDialog = await Swal.fire({
             title: 'โปรดตรวจสอบชื่อสำหรับพิมพ์วุฒิบัตร',
-            html: `ชื่อ-นามสกุลที่ท่านกรอกคือ:<br><b class="text-primary fs-4">${fullInsertedName}</b><br><br>อีเมลสำหรับรับวุฒิบัตร:<br><b class="text-success fs-5">${emailInput}</b><br><br><span class="text-danger fw-bold">* หากระบบออกวุฒิบัตรแล้ว จะไม่สามารถแก้ไขชื่อในภายหลังได้</span>`,
+            html: 'ชื่อ-นามสกุลที่ท่านกรอกคือ:<br><b class="text-primary fs-4">' + fullInsertedName + '</b><br><br>อีเมลสำหรับรับวุฒิบัตร:<br><b class="text-success fs-5">' + emailInput + '</b><br><br><span class="text-danger fw-bold">* หากระบบออกวุฒิบัตรแล้ว จะไม่สามารถแก้ไขชื่อในภายหลังได้</span>',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#071f54',
@@ -238,7 +239,7 @@
 
             Swal.fire({
                 title: 'ลงทะเบียนสำเร็จ!',
-                html: `รหัสลงทะเบียนของคุณคือ: <b class="text-danger fs-4">${uniqueId}</b><br><br>ระบบทำการส่ง QR Code สำหรับรายงานตัวเข้าสู่กล่องข้อความอีเมลเรียบร้อยแล้ว`,
+                html: 'รหัสลงทะเบียนของคุณคือ: <b class="text-danger fs-4">' + uniqueId + '</b><br><br>ระบบทำการส่ง QR Code สำหรับรายงานตัวเข้าสู่กล่องข้อความอีเมลเรียบร้อยแล้ว',
                 icon: 'success',
                 confirmButtonColor: '#071f54',
                 confirmButtonText: 'ตกลง'
