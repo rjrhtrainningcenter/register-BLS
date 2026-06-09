@@ -8,54 +8,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { 
-            --primary: #071f54; 
-            --accent: #1976d2; 
-        }
-        body { 
-            font-family: 'Sarabun', sans-serif; 
-            background-color: #f0f4f8; 
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .reg-card { 
-            width: 100%; 
-            max-width: 600px; 
-            padding: 40px; 
-            border-radius: 24px; 
-            background: #ffffff; 
-            box-shadow: 0 20px 60px rgba(7,31,84,0.1); 
-            border: 1px solid rgba(7, 31, 84, 0.05);
-        }
-        .form-label {
-            font-weight: 600;
-            color: var(--primary);
-        }
-        .form-control-lg, .form-select-lg {
-            border-radius: 12px;
-            font-size: 1rem;
-            background-color: #f8fafc;
-        }
-        .form-control-lg:focus, .form-select-lg:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.1);
-        }
-        .btn-reg {
-            background-color: var(--primary);
-            color: #ffffff;
-            font-weight: 700;
-            padding: 14px;
-            border-radius: 12px;
-            transition: all 0.25s ease;
-        }
-        .btn-reg:hover {
-            background-color: #031233;
-            color: #ffffff;
-            transform: translateY(-1px);
-        }
+        :root { --primary: #071f54; --accent: #1976d2; }
+        body { font-family: 'Sarabun', sans-serif; background-color: #f0f4f8; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .reg-card { width: 100%; max-width: 600px; padding: 40px; border-radius: 24px; background: #ffffff; box-shadow: 0 20px 60px rgba(7,31,84,0.1); border: 1px solid rgba(7, 31, 84, 0.05); }
+        .form-label { font-weight: 600; color: var(--primary); }
+        .form-control-lg, .form-select-lg { border-radius: 12px; font-size: 1rem; background-color: #f8fafc; }
+        .form-control-lg:focus, .form-select-lg:focus { border-color: var(--accent); box-shadow: 0 0 0 0.25rem rgba(25, 118, 210, 0.1); }
+        .btn-reg { background-color: var(--primary); color: #ffffff; font-weight: 700; padding: 14px; border-radius: 12px; transition: all 0.25s ease; }
+        .btn-reg:hover { background-color: #031233; color: #ffffff; transform: translateY(-1px); }
+        /* สไตล์อนิเมชั่นซ่อน/แสดงช่องกรอกพิเศษ */
+        .custom-prefix-box { display: none; transition: all 0.3s ease; }
     </style>
 </head>
 <body>
@@ -79,15 +41,20 @@
         <div class="row">
             <div class="col-sm-4 col-12 mb-3">
                 <label class="form-label">คำนำหน้าชื่อ</label>
-                <select id="prefix" class="form-select form-select-lg" required>
+                <select id="prefix" class="form-select form-select-lg" required onchange="toggleCustomPrefixInput()">
                     <option value="นาย">นาย</option>
                     <option value="นางสาว">นางสาว</option>
                     <option value="นาง">นาง</option>
-                    <option value="นพ.">นพ.</option>
-                    <option value="พญ.">พญ.</option>
+                    <option value="OTHER">อื่นๆ (ระบุ)</option>
                 </select>
             </div>
-            <div class="col-sm-8 col-12 mb-3">
+            
+            <div class="col-sm-4 col-12 mb-3 custom-prefix-box" id="customPrefixWrapper">
+                <label class="form-label">ระบุคำนำหน้าชื่อ</label>
+                <input type="text" id="customPrefix" class="form-control form-control-lg" placeholder="เช่น นพ. / พญ. / ร.ต.อ.">
+            </div>
+
+            <div class="col mb-3">
                 <label class="form-label">ชื่อ - นามสกุล (ภาษาไทย)</label>
                 <input type="text" id="fullNameTH" class="form-control form-control-lg" placeholder="สมชาย ใจดี" required>
                 <div class="form-text text-muted small">* โปรดตรวจสอบตัวสะกดเพื่อใช้พิมพ์บนวุฒิบัตร</div>
@@ -128,77 +95,70 @@
     const SUPABASE_URL = "https://cpiwdnbcuotmhtbhuzce.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwaXdkbmJjdW90bWh0Ymh1emNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDY4NTMsImV4cCI6MjA5NjEyMjg1M30.7QU1FwPgIElugv4B6i23tYmmC60LG0wc8896EHTKXUc";
     
-    // 🌟 อัปเดตลิงก์ท่อส่งข้อมูลหลักไปหาตัวสคริปต์ตัวล่าสุดของนายเรียบร้อยครับ
-    const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbx2jSuFYm7wpCs5zMa3BqmqnUlAju9lipjqrhuV4zpn0oEHtjV6WbPzwjTV8JcqQneF/exec";
+    const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbw1bS3fjGQngjLdKssc8yWzmbQ1gKOvTvUxraCU2eIHNxjvyyAj3iIqGcey_ETZK3pk/exec";
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     let activeSessions = [];
 
-    window.addEventListener('DOMContentLoaded', async () => {
-        await loadActiveSessions();
-    });
+    window.addEventListener('DOMContentLoaded', async () => { await loadActiveSessions(); });
+
+    // 🌟 เพิ่มเติม: ฟังก์ชันสับสวิตช์เปิด-ปิดช่องระบุคำนำหน้าพิเศษ
+    function toggleCustomPrefixInput() {
+        const prefixSelect = document.getElementById('prefix');
+        const customWrapper = document.getElementById('customPrefixWrapper');
+        const customInput = document.getElementById('customPrefix');
+
+        if (prefixSelect.value === 'OTHER') {
+            customWrapper.style.display = 'block';
+            customInput.required = true;
+            customInput.focus();
+        } else {
+            customWrapper.style.display = 'none';
+            customInput.required = false;
+            customInput.value = ''; // ล้างค่าสตริงค้างทิ้งเมื่อเปลี่ยนกลับไปเลือกตัวมาตรฐาน
+        }
+    }
 
     function formatThaiDateDisplay(dateStr, timeStr) {
         if (!dateStr) return "";
         try {
             const dateParts = dateStr.split("-");
             if (dateParts.length !== 3) return dateStr;
-            
             const day = parseInt(dateParts[2], 10);
             const monthIndex = parseInt(dateParts[1], 10) - 1;
             const yearBe = parseInt(dateParts[0], 10) + 543;
-            
             const thaiMonths = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
             return `${day} ${thaiMonths[monthIndex]} ${yearBe} (${timeStr || 'เต็มวัน'})`;
-        } catch (e) {
-            return dateStr;
-        }
+        } catch (e) { return dateStr; }
     }
 
     async function loadActiveSessions() {
         const selectEl = document.getElementById('sessionSelect');
         try {
-            const { data: sessions, error } = await supabaseClient
-                .from('sessions')
-                .select('*')
-                .eq('status', 'Active')
-                .eq('course_key', 'BLS')
-                .order('training_date', { ascending: true });
-
+            const { data: sessions, error } = await supabaseClient.from('sessions').select('*').eq('status', 'Active').eq('course_key', 'BLS').order('training_date', { ascending: true });
             if (error) throw error;
-
             if (!sessions || sessions.length === 0) {
                 selectEl.innerHTML = '<option value="">-- ขออภัย ขณะนี้ไม่มีรอบอบรมที่เปิดรับสมัคร --</option>';
                 document.getElementById('btnSubmit').disabled = true;
                 return;
             }
-
             activeSessions = sessions;
             selectEl.innerHTML = '<option value="">-- กรุณาเลือกรอบอบรมเรียน BLS --</option>';
             sessions.forEach(s => {
                 const localDisplayDate = formatThaiDateDisplay(s.training_date, s.training_time);
-
                 if (s.available_seats > 0) {
                     selectEl.innerHTML += `<option value="${s.id}">[รอบเรียน] ${s.name} - วันที่ ${localDisplayDate}</option>`;
                 } else {
                     selectEl.innerHTML += `<option value="${s.id}" disabled>[เต็มแล้ว] ${s.name} - วันที่ ${localDisplayDate}</option>`;
                 }
             });
-        } catch (e) {
-            console.error("Load Sessions Error:", e);
-            selectEl.innerHTML = '<option value="">-- โหลดข้อมูลรอบอบรมล้มเหลว --</option>';
-        }
+        } catch (e) { console.error(e); selectEl.innerHTML = '<option value="">-- โหลดข้อมูลรอบอบรมล้มเหลว --</option>'; }
     }
 
     function checkQuotaVisibility() {
         const sessionId = document.getElementById('sessionSelect').value;
         const feedback = document.getElementById('quotaFeedback');
-        
-        if (!sessionId) {
-            feedback.style.display = 'none';
-            return;
-        }
-
+        if (!sessionId) { feedback.style.display = 'none'; return; }
         const selected = activeSessions.find(item => String(item.id) === String(sessionId));
         if (selected) {
             feedback.style.display = 'block';
@@ -214,9 +174,19 @@
         const selectedSession = activeSessions.find(item => String(item.id) === String(sessionId));
 
         if (!selectedSession) return;
-
         if (!emailInput.toLowerCase().endsWith('@gmail.com')) {
-            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ลงทะเบียนและส่งมอบวุฒิบัตรผ่านอีเมลบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
+            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ระบบเปิดให้ลงทะเบียนผ่านบัญชี @gmail.com เท่านั้นครับ', 'warning');
+            return;
+        }
+
+        // 🌟 ดักค่าคำนำหน้าชื่อ: ถ้าเลือกอื่นๆ ให้หยิบสตริงจากกล่องข้อความ customPrefix มาส่งแทนค่าดั้งเดิม
+        const prefixSelectValue = document.getElementById('prefix').value;
+        const finalPrefix = prefixSelectValue === 'OTHER' 
+            ? document.getElementById('customPrefix').value.trim() 
+            : prefixSelectValue;
+
+        if (!finalPrefix) {
+            Swal.fire('ระบุข้อมูลไม่ครบถ้วน', 'กรุณาระบุคำนำหน้าชื่อของท่านด้วยครับ', 'warning');
             return;
         }
 
@@ -225,10 +195,14 @@
 
         const uniqueId = Math.floor(10000000 + Math.random() * 90000000);
 
+        let genMatch = selectedSession.name.match(/รุ่นที่\s*(\d+)/) || selectedSession.name.match(/รุ่น\s*(\d+)/);
+        let extractedGenNo = genMatch ? genMatch[1] : "1";
+
         const payload = {
             action: "registerOnline",
             id: uniqueId,
-            prefix: document.getElementById('prefix').value,
+            genNo: extractedGenNo, 
+            prefix: finalPrefix, // ส่งค่าที่กรอกได้แบบไดนามิกเข้าช่องเดิม
             fullNameTH: document.getElementById('fullNameTH').value.trim(),
             phone: document.getElementById('phone').value.trim(),
             email: emailInput,
@@ -240,37 +214,30 @@
         };
 
         try {
-            // 📡 1. ส่งสัญญาณกระตุ้นการบันทึกข้ามระบบงานไปยังฝั่ง Google Apps Script
-            const response = await fetch(MAIN_REG_API_URL, {
+            await fetch(MAIN_REG_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: "postData=" + encodeURIComponent(JSON.stringify(payload))
             });
 
-            // ตรวจสอบรายงาน Log หน้าบ้านเพื่อติดตามสถานะการประมวลผลหลังบ้านของกูเกิ้ล
-            console.log("GAS Server Sync Status:", response.status);
-
-            // 💾 2. หากการคุยกับท่อส่งผ่านฉลุย ค่อยปรับลดยอดโควตาบนตารางเซสชัน Supabase 
             const currentAvailable = selectedSession.available_seats - 1;
-            await supabaseClient
-                .from('sessions')
-                .update({ available_seats: currentAvailable })
-                .eq('id', selectedSession.id);
+            await supabaseClient.from('sessions').update({ available_seats: currentAvailable }).eq('id', selectedSession.id);
 
             Swal.fire({
                 title: 'ลงทะเบียนสำเร็จ!',
-                html: `รหัสลงทะเบียนของคุณคือ: <b class="text-danger fs-4">${uniqueId}</b><br><br>ระบบทำการส่ง QR Code สำหรับรายงานตัวเข้าสู่กล่องข้อความอีเมลเรียบร้อยแล้ว โปรดตรวจสอบกล่องจดหมายของคุณ (หรือใน Junk mail)`,
+                html: `รหัสลงทะเบียนของคุณคือ: <b class="text-danger fs-4">${uniqueId}</b><br><br>ระบบทำการส่ง QR Code สำหรับรายงานตัวเข้าสู่กล่องข้อความอีเมลเรียบร้อยแล้ว`,
                 icon: 'success',
                 confirmButtonColor: '#071f54',
                 confirmButtonText: 'ตกลง'
             }).then(() => {
                 document.getElementById('regForm').reset();
+                document.getElementById('customPrefixWrapper').style.display = 'none'; // รีเซ็ตซ่อนหน้าต่างกรอกหลังบันทึกงาน
                 loadActiveSessions(); 
             });
 
         } catch (err) {
-            console.error("Critical Registration Error:", err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนหลังบ้านได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            console.error(err);
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> ส่งข้อมูลลงทะเบียนเรียน';
