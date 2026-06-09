@@ -67,7 +67,7 @@
 
         <div class="mb-4">
             <label class="form-label">อีเมล (E-mail)</label>
-            <input type="email" id="email" class="form-control form-control-lg" placeholder="example@gmail.com" pattern="^[a-zA-Z0-9._%+-]+@gmail\.com$" title="โปรดระบุที่อยู่อีเมลที่เป็นบัญชีของ @gmail.com เท่านั้น" required>
+            <input type="email" id="email" class="form-control form-control-lg" placeholder="example@gmail.com" required>
             <div class="form-text text-danger fw-bold small mt-1"><i class="fas fa-exclamation-circle me-1"></i> รองรับเฉพาะบัญชีอีเมล @gmail.com เท่านั้น</div>
         </div>
 
@@ -172,8 +172,10 @@
         const selectedSession = activeSessions.find(item => String(item.id) === String(sessionId));
 
         if (!selectedSession) return;
+        
+        // 🌟 [ย้ายมาดักตรงนี้]: ดักกรองจีเมลผ่านสคริปต์หน้าบ้าน เสถียรและทนทานกว่าพึ่งพาแท็ก HTML
         if (!emailInput.toLowerCase().endsWith('@gmail.com')) {
-            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ระบบเปิดให้ลงทะเบียนผ่านบัญชี @gmail.com เท่านั้นครับ', 'warning');
+            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ลงทะเบียนและรับใบประกาศผ่านอีเมลบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
             return;
         }
 
@@ -189,7 +191,6 @@
 
         const fullInsertedName = `${finalPrefix}${document.getElementById('fullNameTH').value.trim()}`;
 
-        // 🌟 [ไม้เด็ด]: หน้าต่างยืนยันความถูกต้องตัวสะกดของชื่อ-นามสกุล ก่อนกดยิงส่งข้อมูลจริง
         const confirmDialog = await Swal.fire({
             title: 'โปรดตรวจสอบชื่อสำหรับพิมพ์วุฒิบัตร',
             html: `ชื่อ-นามสกุลที่ท่านกรอกคือ:<br><b class="text-primary fs-4">${fullInsertedName}</b><br><br>อีเมลสำหรับรับวุฒิบัตร:<br><b class="text-success fs-5">${emailInput}</b><br><br><span class="text-danger fw-bold">* หากระบบออกวุฒิบัตรแล้ว จะไม่สามารถแก้ไขชื่อในภายหลังได้</span>`,
@@ -201,7 +202,6 @@
             cancelButtonText: 'กลับไปแก้ไข'
         });
 
-        // หากผู้เรียนกดปุ่มยกเลิก หรือปุ่มกลับไปแก้ไข ให้หยุดโฟลว์ไว้ตรงนี้ทันที
         if (!confirmDialog.isConfirmed) return;
 
         btn.disabled = true;
@@ -228,6 +228,7 @@
         };
 
         try {
+            // ยิงส่ง Payload ไปเคาะประตูสคริปต์หลักทางอากาศ
             await fetch(MAIN_REG_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
