@@ -91,10 +91,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
+    // 🌟 ฝังคีย์ตรงจุดเดียวในไฟล์: ไม่ต้องง้อไฟล์ config.js จากภายนอกแล้วครับนาย
     const SUPABASE_URL = "https://cpiwdnbcuotmhtbhuzce.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwaXdkbmJjdW90bWh0Ymh1emNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDY4NTMsImV4cCI6MjA5NjEyMjg1M30.7QU1FwPgIElugv4B6i23tYmmC60LG0wc8896EHTKXUc";
-    
-    // 📡 ต่อท่อตรงหาลิงก์เว็บแอปหลักเวอร์ชันล่าสุดของนาย
     const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbw-U9InsFm7MlEWzlaeNIhfYlJuiqVF3uSPNJcrJgpNtZp54805YOiW9pJ-B6EDXQ0/exec";
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -161,7 +160,6 @@
         const selected = activeSessions.find(item => String(item.id) === String(sessionId));
         if (selected) {
             feedback.style.display = 'block';
-            // 🟢 🌟 ซ่อมแซมบั๊กวิกฤต: ครอบสายอักขระภาษากัน Syntax Error บล็อกการรันระบบเรียบร้อยครับ
             feedback.innerText = "ว่างอีก: " + selected.available_seats + " จาก " + selected.max_seats + " ที่นั่ง";
         }
     }
@@ -175,7 +173,7 @@
 
         if (!selectedSession) return;
         if (!emailInput.toLowerCase().endsWith('@gmail.com')) {
-            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ระบบเปิดให้ลงทะเบียนผ่านบัญชี @gmail.com เท่านั้นครับ', 'warning');
+            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ลงทะเบียนและรับใบประกาศผ่านอีเมลบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
             return;
         }
 
