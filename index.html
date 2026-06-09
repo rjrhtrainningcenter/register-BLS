@@ -94,7 +94,6 @@
     const SUPABASE_URL = "https://cpiwdnbcuotmhtbhuzce.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwaXdkbmJjdW90bWh0Ymh1emNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDY4NTMsImV4cCI6MjA5NjEyMjg1M30.7QU1FwPgIElugv4B6i23tYmmC60LG0wc8896EHTKXUc";
     
-    // 🌟 อัปเดตผูกเข้ากับลิงก์ Web App รายการล่าสุดที่นายดีพลอยส่งมาเรียบร้อยครับค๊าบ
     const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbw-U9InsFm7MlEWzlaeNIhfYlJuiqVF3uSPNJcrJgpNtZp54805YOiW9pJ-B6EDXQ0/exec";
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -148,7 +147,7 @@
                 if (s.available_seats > 0) {
                     selectEl.innerHTML += `<option value="${s.id}">[รอบเรียน] ${s.name} - วันที่ ${localDisplayDate}</option>`;
                 } else {
-                    selectEl.innerHTML += `<option value="${s.id}" disabled>[เต็มแล้ว] ${s.name} - วันที่ ${localDisplayDate}</option>';
+                    selectEl.innerHTML += `<option value="${s.id}" disabled>[เต็มแล้ว] ${s.name} - วันที่ ${localDisplayDate}</option>`;
                 }
             });
         } catch (e) { console.error(e); selectEl.innerHTML = '<option value="">-- โหลดข้อมูลรอบอบรมล้มเหลว --</option>'; }
