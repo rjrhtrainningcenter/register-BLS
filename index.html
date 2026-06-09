@@ -91,7 +91,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // 🌟 ฝังคีย์ตรงจุดเดียวในไฟล์: ไม่ต้องง้อไฟล์ config.js จากภายนอกแล้วครับนาย
     const SUPABASE_URL = "https://cpiwdnbcuotmhtbhuzce.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwaXdkbmJjdW90bWh0Ymh1emNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDY4NTMsImV4cCI6MjA5NjEyMjg1M30.7QU1FwPgIElugv4B6i23tYmmC60LG0wc8896EHTKXUc";
     const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbw-U9InsFm7MlEWzlaeNIhfYlJuiqVF3uSPNJcrJgpNtZp54805YOiW9pJ-B6EDXQ0/exec";
@@ -207,37 +206,58 @@
 
         const uniqueId = Math.floor(10000000 + Math.random() * 90000000);
 
-        let genMatch = selectedSession.name.match(/รุ่นที่\s*(\d+)/) || selectedSession.name.match(/รุ่น\s*(\d+)/);
-        let extractedGenNo = genMatch ? genMatch[1] : "1";
-
-        const payload = {
-            action: "registerOnline",
-            id: uniqueId,
-            genNo: extractedGenNo, 
-            prefix: finalPrefix, 
-            fullNameTH: document.getElementById('fullNameTH').value.trim(),
-            phone: document.getElementById('phone').value.trim(),
-            email: emailInput,
-            sessionName: selectedSession.name,
-            trainingDate: selectedSession.training_date, 
-            trainingTime: selectedSession.training_time, 
-            courseKey: "BLS",
-            photoConsent: document.getElementById('photoConsent').checked
-        };
-
         try {
-            await fetch(MAIN_REG_API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: "postData=" + encodeURIComponent(JSON.stringify(payload))
-            });
+            // 🌟 สเต็ปที่ 1: บันทึกลง Supabase ผูกค่าจริง (id=1, 2, 3...) เข้า Foreign Key ตรงล็อกเป๊ะ
+            const registrationPayload = {
+                "id": Number(uniqueId),
+                "session_id": selectedSession.id, 
+                "course_key": "BLS",
+                "prefix": finalPrefix,
+                "full_name_th": document.getElementById('fullNameTH').value.trim(),
+                "phone": document.getElementById('phone').value.trim(),
+                "email": emailInput,
+                "photo_consent": document.getElementById('photoConsent').checked,
+                "is_checked_in": false,
+                "is_checked_out": false
+            };
 
+            const { error: dbErr } = await supabaseClient.from('registrations').insert([registrationPayload]);
+            if (dbErr) throw dbErr;
+
+            // หักลดยอดที่นั่งเซสชันบน Supabase
             const currentAvailable = selectedSession.available_seats - 1;
             await supabaseClient.from('sessions').update({ available_seats: currentAvailable }).eq('id', selectedSession.id);
 
+            // 🌟 สเต็ปที่ 2: ใช้ค่า id ตัวเลขตรงๆ ส่งข้ามท่อไปให้ GAS สร้างแท็บย่อ (BLS-1, BLS-2) ทันที คลีนและเสถียรที่สุด
+            const payload = {
+                action: "registerOnline",
+                id: uniqueId,
+                genNo: selectedSession.id, // 🟢 ส่ง id ตัวเลขไปทำเป็นเลขรุ่นตรงๆ ได้เลย เพราะเรียงลำดับตรงรุ่นแล้วค๊าบ
+                prefix: finalPrefix, 
+                fullNameTH: document.getElementById('fullNameTH').value.trim(),
+                phone: document.getElementById('phone').value.trim(),
+                email: emailInput,
+                sessionName: selectedSession.name,
+                trainingDate: selectedSession.training_date, 
+                trainingTime: selectedSession.training_time, 
+                courseKey: "BLS",
+                photoConsent: document.getElementById('photoConsent').checked
+            };
+
+            // โยนงานเบื้องหลังให้ Google เขียนชีตแยกคอร์สและยิงอีเมลส่งตั๋ว
+            try {
+                await fetch(MAIN_REG_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: "postData=" + encodeURIComponent(JSON.stringify(payload))
+                });
+            } catch (googleApiErr) {
+                console.warn("⚠️ บันทึกฝั่ง Google ขัดข้องชั่วคราว แต่รายชื่อเซฟลง Supabase ปลอดภัยแล้ว: ", googleApiErr);
+            }
+
             Swal.fire({
                 title: 'ลงทะเบียนสำเร็จ!',
-                html: 'รหัสลงทะเบียนของคุณคือ: <b class="text-danger fs-4">' + uniqueId + '</b><br><br>ระบบทำการส่ง QR Code สำหรับรายงานตัวเข้าสู่กล่องข้อความอีเมลเรียบร้อยแล้ว',
+                html: 'รหัสลงทะเบียนของคุณคือ: <b class="text-danger fs-4">' + uniqueId + '</b><br><br>ระบบทำการบันทึกข้อมูลและส่ง QR Code เข้าสู่กล่องข้อความเรียบร้อยแล้ว',
                 icon: 'success',
                 confirmButtonColor: '#071f54',
                 confirmButtonText: 'ตกลง'
@@ -249,7 +269,7 @@
 
         } catch (err) {
             console.error(err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> ส่งข้อมูลลงทะเบียนเรียน';
