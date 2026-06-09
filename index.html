@@ -93,6 +93,8 @@
 <script>
     const SUPABASE_URL = "https://cpiwdnbcuotmhtbhuzce.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwaXdkbmJjdW90bWh0Ymh1emNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDY4NTMsImV4cCI6MjA5NjEyMjg1M30.7QU1FwPgIElugv4B6i23tYmmC60LG0wc8896EHTKXUc";
+    
+    // 📡 🚨 อย่าลืมเอาลิงก์ Web App ใหม่ล่าสุดมาแปะแทนที่ตรงนี้ก่อนอัปโหลดขึ้น GitHub นะครับนาย
     const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbwwYjoq7Z5IKNx9R8nG-CKP_2kwzYYgFHcBYycMjQ_6MUj8mgHtAne6pqcgDNUiNKLD/exec";
     
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -132,7 +134,7 @@
     async function loadActiveSessions() {
         const selectEl = document.getElementById('sessionSelect');
         try {
-            const { data: sessions, error } = await supabaseClient.from('sessions').select('*').eq('status', 'Active').eq('course_key', 'BLS').order('training_date', { ascending: true });
+            const { data: sessions, error } = await supabaseClient.from('sessions').select('*').eq('status', 'Active').eq('course_key', 'BLS').order('id', { ascending: true });
             if (error) throw error;
             if (!sessions || sessions.length === 0) {
                 selectEl.innerHTML = '<option value="">-- ขออภัย ขณะนี้ไม่มีรอบอบรมที่เปิดรับสมัคร --</option>';
@@ -172,7 +174,7 @@
 
         if (!selectedSession) return;
         if (!emailInput.toLowerCase().endsWith('@gmail.com')) {
-            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ลงทะเบียนและรับใบประกาศผ่านอีเมลบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
+            Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ลงทะเบียนผ่านบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
             return;
         }
 
@@ -207,7 +209,7 @@
         const uniqueId = Math.floor(10000000 + Math.random() * 90000000);
 
         try {
-            // 🌟 สเต็ปที่ 1: บันทึกลง Supabase ผูกค่าจริง (id=1, 2, 3...) เข้า Foreign Key ตรงล็อกเป๊ะ
+            // สเต็ปที่ 1: ลงทะเบียนผูกคีย์หลักเข้า Supabase
             const registrationPayload = {
                 "id": Number(uniqueId),
                 "session_id": selectedSession.id, 
@@ -224,15 +226,15 @@
             const { error: dbErr } = await supabaseClient.from('registrations').insert([registrationPayload]);
             if (dbErr) throw dbErr;
 
-            // หักลดยอดที่นั่งเซสชันบน Supabase
+            // หักลบโควตาที่นั่งบนฐานข้อมูล
             const currentAvailable = selectedSession.available_seats - 1;
             await supabaseClient.from('sessions').update({ available_seats: currentAvailable }).eq('id', selectedSession.id);
 
-            // 🌟 สเต็ปที่ 2: ใช้ค่า id ตัวเลขตรงๆ ส่งข้ามท่อไปให้ GAS สร้างแท็บย่อ (BLS-1, BLS-2) ทันที คลีนและเสถียรที่สุด
+            // สเต็ปที่ 2: จัดเตรียมชุดข้อมูล Payload ส่งต่อให้ Google Apps Script
             const payload = {
                 action: "registerOnline",
                 id: uniqueId,
-                genNo: selectedSession.id, // 🟢 ส่ง id ตัวเลขไปทำเป็นเลขรุ่นตรงๆ ได้เลย เพราะเรียงลำดับตรงรุ่นแล้วค๊าบ
+                genNo: selectedSession.id, // ใช้ค่าเซสชัน ID (1-9) สั่งเปิดแท็บสั้นได้โดยตรง
                 prefix: finalPrefix, 
                 fullNameTH: document.getElementById('fullNameTH').value.trim(),
                 phone: document.getElementById('phone').value.trim(),
@@ -244,15 +246,14 @@
                 photoConsent: document.getElementById('photoConsent').checked
             };
 
-            // โยนงานเบื้องหลังให้ Google เขียนชีตแยกคอร์สและยิงอีเมลส่งตั๋ว
+            // 🌟 ปรับวิธีส่งให้แนบเป็น Raw JSON ไร้การแปลงฟอร์มเพื่อแก้ปัญหาข้อมูลหายกลางอากาศ
             try {
                 await fetch(MAIN_REG_API_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: "postData=" + encodeURIComponent(JSON.stringify(payload))
+                    body: JSON.stringify(payload)
                 });
             } catch (googleApiErr) {
-                console.warn("⚠️ บันทึกฝั่ง Google ขัดข้องชั่วคราว แต่รายชื่อเซฟลง Supabase ปลอดภัยแล้ว: ", googleApiErr);
+                console.warn("⚠️ บันทึกฝั่ง Google ขัดข้อง แต่ข้อมูลใน Supabase สำเร็จแล้ว: ", googleApiErr);
             }
 
             Swal.fire({
@@ -269,7 +270,7 @@
 
         } catch (err) {
             console.error(err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลลงฐานข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> ส่งข้อมูลลงทะเบียนเรียน';
