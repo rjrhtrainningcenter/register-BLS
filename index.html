@@ -125,21 +125,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
-    // 🌟 จุดแก้ไขวิกฤต: ต่อท่อตรงเข้าฐานข้อมูลและคีย์หลังบ้านภายในไฟล์นี้เลย ปลอดภัยจากปัญหา 404
     const SUPABASE_URL = "https://cpiwdnbcuotmhtbhuzce.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNwaXdkbmJjdW90bWh0Ymh1emNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA1NDY4NTMsImV4cCI6MjA5NjEyMjg1M30.7QU1FwPgIElugv4B6i23tYmmC60LG0wc8896EHTKXUc";
-    const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbw1bS3fjGQngjLdKssc8yWzmbQ1gKOvTvUxraCU2eIHNxjvyyAj3iIqGcey_ETZK3pk/exec";
     
-    // สั่งเริ่มทำงานตัวช่วยยิงข้อมูล Supabase
+    // 🌟 อัปเดตลิงก์ท่อส่งข้อมูลหลักไปหาตัวสคริปต์ตัวล่าสุดของนายเรียบร้อยครับ
+    const MAIN_REG_API_URL = "https://script.google.com/macros/s/AKfycbx2jSuFYm7wpCs5zMa3BqmqnUlAju9lipjqrhuV4zpn0oEHtjV6WbPzwjTV8JcqQneF/exec";
+    
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
     let activeSessions = [];
 
     window.addEventListener('DOMContentLoaded', async () => {
         await loadActiveSessions();
     });
 
-    // ฟังก์ชันช่วยแปลงฟอร์แมตวันที่จากประเภท DATE สากลมาเป็นข้อความภาษาไทยขึ้น Dropdown
     function formatThaiDateDisplay(dateStr, timeStr) {
         if (!dateStr) return "";
         try {
@@ -157,7 +155,6 @@
         }
     }
 
-    // ดึงข้อมูลรอบอบรม BLS ที่เปิดรับสมัครจากเซิร์ฟเวอร์
     async function loadActiveSessions() {
         const selectEl = document.getElementById('sessionSelect');
         try {
@@ -193,7 +190,6 @@
         }
     }
 
-    // แสดงโควตาจำนวนที่นั่งคงเหลือจริงบนหน้าจอ
     function checkQuotaVisibility() {
         const sessionId = document.getElementById('sessionSelect').value;
         const feedback = document.getElementById('quotaFeedback');
@@ -210,7 +206,6 @@
         }
     }
 
-    // จัดส่งข้อมูลสมัครเข้าสายพานระบบงาน
     async function handleRegistration(e) {
         e.preventDefault();
         const btn = document.getElementById('btnSubmit');
@@ -220,7 +215,6 @@
 
         if (!selectedSession) return;
 
-        // ดักกรองรอบที่สองด้วยสคริปต์หน้าบ้าน บล็อกไม่ให้คนใช้อีเมลนอกค่ายสมัครเข้ามาเด็ดขาด
         if (!emailInput.toLowerCase().endsWith('@gmail.com')) {
             Swal.fire('รูปแบบอีเมลไม่ถูกต้อง', 'ขออภัยครับ ระบบฝึกอบรมนี้เปิดให้ลงทะเบียนและส่งมอบวุฒิบัตรผ่านอีเมลบัญชีของ @gmail.com เท่านั้นครับ', 'warning');
             return;
@@ -246,13 +240,17 @@
         };
 
         try {
+            // 📡 1. ส่งสัญญาณกระตุ้นการบันทึกข้ามระบบงานไปยังฝั่ง Google Apps Script
             const response = await fetch(MAIN_REG_API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: "postData=" + encodeURIComponent(JSON.stringify(payload))
             });
 
-            // ปรับลดยอดโควตาในฐานข้อมูลลงทันที 1 ที่นั่ง
+            // ตรวจสอบรายงาน Log หน้าบ้านเพื่อติดตามสถานะการประมวลผลหลังบ้านของกูเกิ้ล
+            console.log("GAS Server Sync Status:", response.status);
+
+            // 💾 2. หากการคุยกับท่อส่งผ่านฉลุย ค่อยปรับลดยอดโควตาบนตารางเซสชัน Supabase 
             const currentAvailable = selectedSession.available_seats - 1;
             await supabaseClient
                 .from('sessions')
@@ -271,8 +269,8 @@
             });
 
         } catch (err) {
-            console.error(err);
-            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนได้ กรุณาลองใหม่อีกครั้ง', 'error');
+            console.error("Critical Registration Error:", err);
+            Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถเชื่อมต่อระบบลงทะเบียนหลังบ้านได้ กรุณาลองใหม่อีกครั้ง', 'error');
         } finally {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i> ส่งข้อมูลลงทะเบียนเรียน';
